@@ -1,4 +1,4 @@
-## ----r setup, message=FALSE, warning=FALSE, results='hold'--------------------
+## ----setup-and-libraries, message=FALSE, warning=FALSE, results='hold'--------
 library(sdtm.oak)
 library(pharmaverseraw)
 library(dplyr)
@@ -7,7 +7,7 @@ dm_raw <- pharmaverseraw::dm_raw
 ds_raw <- pharmaverseraw::ds_raw
 ec_raw <- pharmaverseraw::ec_raw
 
-## ----r------------------------------------------------------------------------
+## ----generate-oak-id-vars-----------------------------------------------------
 dm_raw <- dm_raw %>%
   generate_oak_id_vars(
     pat_var = "PATNUM",
@@ -26,10 +26,10 @@ ec_raw <- ec_raw %>%
     raw_src = "ec_raw"
   )
 
-## ----r, echo = TRUE-----------------------------------------------------------
+## ----load-controlled-terminology, echo = TRUE---------------------------------
 study_ct <- read.csv("metadata/sdtm_ct.csv")
 
-## ----r------------------------------------------------------------------------
+## ----configure-reference-dates------------------------------------------------
 ref_date_conf_df <- tibble::tribble(
   ~raw_dataset_name, ~date_var,     ~time_var,      ~dformat,      ~tformat, ~sdtm_var_name,
   "ec_raw",       "IT.ECSTDAT", NA_character_, "dd-mmm-yyyy", NA_character_,     "RFXSTDTC",
@@ -41,14 +41,14 @@ ref_date_conf_df <- tibble::tribble(
   "ds_raw",          "DEATHDT", NA_character_,  "mm/dd/yyyy", NA_character_,       "DTHDTC"
 )
 
-## ----r------------------------------------------------------------------------
+## ----initialize-dm-domain-----------------------------------------------------
 dm <- dm_raw %>%
   mutate(
     SUBJID = substr(PATNUM, 5, 8)
   ) %>%
   select(oak_id, raw_source, patient_number, SUBJID)
 
-## ----r------------------------------------------------------------------------
+## ----map-dm-demographics-and-arms---------------------------------------------
 dm <- dm %>%
   # Map AGE using assign_no_ct
   assign_no_ct(
@@ -127,7 +127,7 @@ dm <- dm %>%
     id_vars = oak_id_vars()
   )
 
-## ----r eval=TRUE--------------------------------------------------------------
+## ----derive-rfstdtc, eval=TRUE------------------------------------------------
 dm <- dm %>%
   # Derive RFSTDTC using oak_cal_ref_dates
   oak_cal_ref_dates(
@@ -142,7 +142,7 @@ dm <- dm %>%
     )
   )
 
-## ----r------------------------------------------------------------------------
+## ----derive-rfendtc-----------------------------------------------------------
 dm <- dm %>%
   # Derive RFENDTC using oak_cal_ref_dates
   oak_cal_ref_dates(
@@ -157,7 +157,7 @@ dm <- dm %>%
     )
   )
 
-## ----r------------------------------------------------------------------------
+## ----derive-remaining-reference-dates-----------------------------------------
 dm <- dm %>%
   # Derive RFXSTDTC using oak_cal_ref_dates
   oak_cal_ref_dates(
@@ -220,7 +220,7 @@ dm <- dm %>%
     )
   )
 
-## ----r------------------------------------------------------------------------
+## ----finalize-dm-identifiers-and-study-days----------------------------------
 dm <- dm %>%
   mutate(
     STUDYID = dm_raw$STUDY,
